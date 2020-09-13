@@ -1,13 +1,12 @@
 package com.project.roadmapgenerator.entities;
 
 import java.util.Date;
-import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import lombok.AllArgsConstructor;
@@ -20,22 +19,25 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "PROJECT_TBL")
-public class Project {
-
+@Table(name = "TASK_ASSIGNMENT_TBL")
+public class TaskAssignment {
+	
 	@Id
 	@Column(name = "ID")
 	private Long id;
-
-	@Column(name = "NAME", nullable = false)
-	private String name;
-
-	@Column(name = "START_DATE", nullable = false)
-	private Date startDate;
 	
+	@ManyToOne
+	@JoinColumn(name = "FK_EMPLOYEE_ID")
+	private Employee employee;
+	
+	@ManyToOne
+	@JoinColumn(name = "FK_TASK_ID")
+	private Task task;
+	
+	@Column(name = "START_DATE")
+	private Date startDate;
+
 	@Column(name = "END_DATE")
 	private Date endDate;
 
-	@OneToMany(mappedBy = "project", cascade = CascadeType.REMOVE, orphanRemoval = true)
-	private List<Milestone> milestones;
 }

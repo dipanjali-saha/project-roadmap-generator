@@ -19,7 +19,7 @@ public class ProjectController {
 	private ProjectService projectService;
 
 	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-	public List<Project> fetchAllProjects() {
+	public List<Project> fetchAllProjects() {		
 		return projectService.getAllProjects();
 	}
 
