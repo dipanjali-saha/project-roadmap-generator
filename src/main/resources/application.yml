@@ -1,0 +1,20 @@
+server:
+  port: 8086
+
+spring:
+   datasource:
+     driverClassName: com.mysql.jdbc.Driver
+     url: jdbc:mysql://localhost:3306/roadmapgenerator
+     username: root
+     password: JoyTua@02122018
+   jpa:
+      database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+      show-sql: true
+      hibernate.ddl-auto: update
+
+logging:
+  level:
+    org:
+    springframework: INFO
+
+springdoc.swagger-ui.path: /swagger-ui.html
