@@ -1,1 +1,1 @@
-# project-roadmap-generator
+This codebase serves as the backend for the project roadmap generator application
