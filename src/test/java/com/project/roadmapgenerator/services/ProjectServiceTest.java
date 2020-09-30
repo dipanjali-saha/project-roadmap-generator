@@ -10,23 +10,20 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.util.ReflectionTestUtils;
 
-import com.project.roadmapgenerator.entities.Project;
+import com.project.roadmapgenerator.entities.ProjectEntity;
 import com.project.roadmapgenerator.repositories.ProjectRepository;
 
-@SpringBootTest
 class ProjectServiceTest {
 	
 	@InjectMocks
 	private ProjectService projectService;
+	
 	@Mock
 	private ProjectRepository projectRepository;
 	
 	@BeforeEach
-	public void setup() {
-		ReflectionTestUtils.setField(projectService, "projectRepository", projectRepository);
+	public void setUp() {
 		MockitoAnnotations.initMocks(this);
 	}
 	
@@ -36,7 +33,7 @@ class ProjectServiceTest {
 		Assertions.assertThat(projectService.getProjectsByName("testProject")).isEmpty();
 	}
 	
-	private List<Project> getMockedProjectList() {
+	private List<ProjectEntity> getMockedProjectList() {
 		return new ArrayList<>();
 	}
 

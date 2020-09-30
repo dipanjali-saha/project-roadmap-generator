@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.project.roadmapgenerator.entities.Project;
+import com.project.roadmapgenerator.entities.ProjectEntity;
 import com.project.roadmapgenerator.services.ProjectService;
 
 @RestController
@@ -19,7 +19,7 @@ public class ProjectController {
 	private ProjectService projectService;
 
 	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-	public List<Project> fetchAllProjects() {		
+	public List<ProjectEntity> fetchAllProjects() {		
 		return projectService.getAllProjects();
 	}
 

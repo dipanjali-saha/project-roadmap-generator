@@ -1,0 +1,18 @@
+server:
+  port: {{server.port}}
+
+spring:
+   datasource:
+     driverClassName: {{spring.datasource.driverClassName}}
+     url: {{spring.datasource.url}}
+     username: {{spring.datasource.username}}
+     password: {{spring.datasource.password}}
+   jpa:
+      database-platform: {{spring.jpa.database-platform}}
+      show-sql: {{spring.jpa.show-sql}}
+      hibernate.ddl-auto: {{spring.jpa.update}}
+
+logging:
+  level:
+    org:
+       springframework: {{logging.level.org.springframework}}

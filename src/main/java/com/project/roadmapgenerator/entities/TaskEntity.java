@@ -1,5 +1,6 @@
 package com.project.roadmapgenerator.entities;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -8,6 +9,10 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,7 +25,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @Entity
 @Table(name = "TASK_TBL")
-public class Task {
+public class TaskEntity implements Serializable {
+
+	private static final long serialVersionUID = 920700615814687644L;
 
 	@Id
 	@Column(name = "ID")
@@ -31,7 +38,8 @@ public class Task {
 
 	@ManyToOne
 	@JoinColumn(name = "FK_MILESTONE_ID")
-	private Milestone milestone;
+	@JsonBackReference
+	private MilestoneEntity milestone;
 
 	@Column(name = "ESTIMATE", nullable = false)
 	private int estimate;
@@ -40,12 +48,14 @@ public class Task {
 	private int priority;
 
 	@Column(name = "DEPENDENCY")
-	private Task dependentTask;
+	private Long dependentTaskId;
 
 	@Column(name = "START_DATE")
+	@Temporal(TemporalType.DATE)
 	private Date startDate;
 
 	@Column(name = "END_DATE")
+	@Temporal(TemporalType.DATE)
 	private Date endDate;
 
 }
