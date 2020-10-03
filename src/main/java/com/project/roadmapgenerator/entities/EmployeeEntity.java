@@ -32,8 +32,7 @@ public class EmployeeEntity {
 	@Column(name = "NAME", nullable = false)
 	private String name;
 	
-	@OneToMany(mappedBy = "employee", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
-	@JsonManagedReference
+	@OneToMany(mappedBy = "employee", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
 	private List<TaskAssignmentEntity> taskAssignments;
 
 }

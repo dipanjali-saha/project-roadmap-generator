@@ -22,7 +22,6 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @Entity
 @Table(name = "TASK_TBL")
 public class TaskEntity implements Serializable {

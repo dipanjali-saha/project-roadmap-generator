@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,14 +52,14 @@ public class RoadmapCalculatorService {
 				for (MilestoneEntity milestone : milestones) {
 					milestone.setStartDate(milestoneStartDate);
 					milestone.setEndDate(getMilestoneEndDate(milestone));
-					milestoneRepository.save(milestone);
-					
+					milestoneRepository.saveAndFlush(milestone);
+
 					milestoneStartDate = DateUtil.addDays(milestone.getEndDate(), 1);
 					projectEndDate = milestone.getEndDate();
 				}
 			}
 			project.setEndDate(projectEndDate);
-			projectRepository.save(project);
+			projectRepository.saveAndFlush(project);
 		}
 	}
 
@@ -66,6 +67,8 @@ public class RoadmapCalculatorService {
 		Date milestoneEndDate = milestone.getStartDate();
 		List<TaskEntity> tasks = milestone.getTasks();
 		if (CollectionUtils.isNotEmpty(tasks)) {
+			taskAssignmentRepository.deleteAll(taskAssignmentRepository
+					.findByTaskIdIn(tasks.stream().map(TaskEntity::getId).collect(Collectors.toList())));
 			tasks.sort(Comparator.comparingInt(TaskEntity::getPriority));
 			Date taskStartDateToBeSearchedFrom = milestone.getStartDate();
 			for (TaskEntity task : tasks) {
@@ -74,10 +77,10 @@ public class RoadmapCalculatorService {
 				if (!earliestPossibleTaskAssignment.isEmpty()) {
 					task.setStartDate(earliestPossibleTaskAssignment.keySet().stream().findFirst().get());
 					task.setEndDate(DateUtil.addDays(task.getStartDate(), task.getEstimate() - 1));
-					taskRepository.save(task);
-					
+					taskRepository.saveAndFlush(task);
+
 					assignTaskToEmployee(task, earliestPossibleTaskAssignment.values().stream().findFirst().get());
-					
+
 					milestoneEndDate = task.getEndDate();
 				}
 			}
@@ -86,9 +89,12 @@ public class RoadmapCalculatorService {
 	}
 
 	private void assignTaskToEmployee(TaskEntity task, EmployeeEntity employee) {
-		TaskAssignmentEntity taskAssignment = TaskAssignmentEntity.builder().employee(employee)
-				.task(task).startDate(task.getStartDate()).endDate(task.getEndDate()).build();
-		taskAssignmentRepository.save(taskAssignment);
+		TaskAssignmentEntity taskAssignment = taskAssignmentRepository.findByTaskId(task.getId())
+				.orElse(TaskAssignmentEntity.builder().task(task).build());
+		taskAssignment.setEmployee(employee);
+		taskAssignment.setStartDate(task.getStartDate());
+		taskAssignment.setEndDate(task.getEndDate());
+		taskAssignmentRepository.saveAndFlush(taskAssignment);
 	}
 
 	private Date getDateLimitToAssignTask(Date taskStartDateToBeSearchedFrom, TaskEntity task) {
@@ -112,10 +118,7 @@ public class RoadmapCalculatorService {
 
 	private Map<Date, EmployeeEntity> getEmployeeForTaskAssignment(Date date, List<EmployeeEntity> allEmployees) {
 		for (EmployeeEntity emp : allEmployees) {
-			if (emp.getTaskAssignments().stream()
-					.noneMatch(taskAssignment -> (taskAssignment.getStartDate().before(date)
-							|| taskAssignment.getStartDate().equals(date))
-							&& (taskAssignment.getEndDate().after(date) || taskAssignment.getEndDate().equals(date)))) {
+			if (CollectionUtils.isEmpty(taskAssignmentRepository.findByEmployeeIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(emp.getId(), date, date))) {
 				return Collections.singletonMap(date, emp);
 			}
 		}
