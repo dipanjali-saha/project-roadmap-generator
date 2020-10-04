@@ -39,7 +39,7 @@ public class RoadmapCalculatorService {
 	private TaskAssignmentRepository taskAssignmentRepository;
 
 	@Transactional
-	public void calculateProjectEndDate(String projectName) {
+	public void calculateProjectRoadmap(String projectName) {
 		List<ProjectEntity> projects = projectRepository.findByName(projectName);
 		ProjectEntity project = projects.stream().findFirst().orElse(null);
 		Date projectEndDate = null;
@@ -51,10 +51,9 @@ public class RoadmapCalculatorService {
 				milestones.sort(Comparator.comparingInt(MilestoneEntity::getPriority));
 				for (MilestoneEntity milestone : milestones) {
 					milestone.setStartDate(milestoneStartDate);
-					milestone.setEndDate(getMilestoneEndDate(milestone));
+					milestone.setEndDate(getMilestoneEndDate(milestone, project.getId()));
 					milestoneRepository.saveAndFlush(milestone);
-
-					milestoneStartDate = DateUtil.addDays(milestone.getEndDate(), 1);
+					milestoneStartDate = DateUtil.addDaysWithoutWeekends(milestone.getEndDate(), 1);
 					projectEndDate = milestone.getEndDate();
 				}
 			}
@@ -63,24 +62,21 @@ public class RoadmapCalculatorService {
 		}
 	}
 
-	private Date getMilestoneEndDate(MilestoneEntity milestone) {
+	private Date getMilestoneEndDate(MilestoneEntity milestone, Long projectId) {
 		Date milestoneEndDate = milestone.getStartDate();
 		List<TaskEntity> tasks = milestone.getTasks();
 		if (CollectionUtils.isNotEmpty(tasks)) {
 			taskAssignmentRepository.deleteAll(taskAssignmentRepository
 					.findByTaskIdIn(tasks.stream().map(TaskEntity::getId).collect(Collectors.toList())));
 			tasks.sort(Comparator.comparingInt(TaskEntity::getPriority));
-			Date taskStartDateToBeSearchedFrom = milestone.getStartDate();
 			for (TaskEntity task : tasks) {
-				taskStartDateToBeSearchedFrom = getDateLimitToAssignTask(taskStartDateToBeSearchedFrom, task);
-				Map<Date, EmployeeEntity> earliestPossibleTaskAssignment = getEarliestPossibleTaskAssignment(taskStartDateToBeSearchedFrom);
+				Date earliestPossibleDateToBeginTask = getEarliesPossibleDateToAssignTask(milestone.getStartDate(), task);
+				Map<Date, EmployeeEntity> earliestPossibleTaskAssignment = getEarliestPossibleTaskAssignment(earliestPossibleDateToBeginTask, projectId);
 				if (!earliestPossibleTaskAssignment.isEmpty()) {
 					task.setStartDate(earliestPossibleTaskAssignment.keySet().stream().findFirst().get());
-					task.setEndDate(DateUtil.addDays(task.getStartDate(), task.getEstimate() - 1));
+					task.setEndDate(DateUtil.addDaysWithoutWeekends(task.getStartDate(), task.getEstimate() - 1));
 					taskRepository.saveAndFlush(task);
-
 					assignTaskToEmployee(task, earliestPossibleTaskAssignment.values().stream().findFirst().get());
-
 					milestoneEndDate = task.getEndDate();
 				}
 			}
@@ -89,31 +85,27 @@ public class RoadmapCalculatorService {
 	}
 
 	private void assignTaskToEmployee(TaskEntity task, EmployeeEntity employee) {
-		TaskAssignmentEntity taskAssignment = taskAssignmentRepository.findByTaskId(task.getId())
-				.orElse(TaskAssignmentEntity.builder().task(task).build());
-		taskAssignment.setEmployee(employee);
-		taskAssignment.setStartDate(task.getStartDate());
-		taskAssignment.setEndDate(task.getEndDate());
+		TaskAssignmentEntity taskAssignment = TaskAssignmentEntity.builder().task(task).employee(employee).startDate(task.getStartDate()).endDate(task.getEndDate()).build();
 		taskAssignmentRepository.saveAndFlush(taskAssignment);
 	}
 
-	private Date getDateLimitToAssignTask(Date taskStartDateToBeSearchedFrom, TaskEntity task) {
+	private Date getEarliesPossibleDateToAssignTask(Date mileStoneStartDate, TaskEntity task) {
 		if (null != task.getDependentTaskId()) {
 			TaskEntity dependentTask = taskRepository.findById(task.getDependentTaskId()).orElse(null);
 			if (null != dependentTask) {
-				taskStartDateToBeSearchedFrom = DateUtil.addDays(dependentTask.getEndDate(), 1);
+				return DateUtil.addDaysWithoutWeekends(dependentTask.getEndDate(), 1);
 			}
 		}
-		return taskStartDateToBeSearchedFrom;
+		return mileStoneStartDate;
 	}
 
-	private Map<Date, EmployeeEntity> getEarliestPossibleTaskAssignment(Date startDate) {
-		List<EmployeeEntity> allEmployees = employeeRepository.findAll();
+	private Map<Date, EmployeeEntity> getEarliestPossibleTaskAssignment(Date startDate, Long projectId) {
+		List<EmployeeEntity> allProjectEmployees = employeeRepository.findByProjectId(projectId);
 		Date taskStartDate = startDate;
-		while (getEmployeeForTaskAssignment(taskStartDate, allEmployees).isEmpty()) {
-			taskStartDate = DateUtil.addDays(taskStartDate, 1);
+		while (getEmployeeForTaskAssignment(taskStartDate, allProjectEmployees).isEmpty()) {
+			taskStartDate = DateUtil.addDaysWithoutWeekends(taskStartDate, 1);
 		}
-		return getEmployeeForTaskAssignment(taskStartDate, allEmployees);
+		return getEmployeeForTaskAssignment(taskStartDate, allProjectEmployees);
 	}
 
 	private Map<Date, EmployeeEntity> getEmployeeForTaskAssignment(Date date, List<EmployeeEntity> allEmployees) {

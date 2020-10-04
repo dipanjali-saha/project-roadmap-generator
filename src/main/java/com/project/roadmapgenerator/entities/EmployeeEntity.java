@@ -32,6 +32,9 @@ public class EmployeeEntity {
 	@Column(name = "NAME", nullable = false)
 	private String name;
 	
+	@Column(name= "PROJECT_ID")
+	private Long projectId;
+	
 	@OneToMany(mappedBy = "employee", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
 	private List<TaskAssignmentEntity> taskAssignments;
 

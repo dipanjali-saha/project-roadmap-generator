@@ -22,7 +22,7 @@ public class ProjectRoadmapController {
 	
 	@PostMapping("/project/{projectName}")
 	public void generateProjectRoadmap(@PathVariable("projectName") String projectName) {
-		roadmapCalculatorService.calculateProjectEndDate(projectName);
+		roadmapCalculatorService.calculateProjectRoadmap(projectName);
 	}
 	
 	@GetMapping("/project/{projectName}")
