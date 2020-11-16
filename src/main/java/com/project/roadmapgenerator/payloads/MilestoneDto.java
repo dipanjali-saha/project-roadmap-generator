@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 public class MilestoneDto {
 	
 	private String name;
+	private Integer priority;
 	private String startDate;
 	private String endDate;
 	private List<TaskDto> tasks;

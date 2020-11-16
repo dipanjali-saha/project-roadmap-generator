@@ -1,6 +1,5 @@
 package com.project.roadmapgenerator.entities;
 
-import java.io.Serializable;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -18,50 +17,30 @@ import org.hibernate.annotations.GenericGenerator;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @Entity
-@Table(name = "TASK_TBL")
-public class TaskEntity implements Serializable {
-
-	private static final long serialVersionUID = 920700615814687644L;
-
+@Table(name = "EMPLOYEE_LEAVE_TBL")
+public class EmployeeLeaveEntity {
+	
 	@Id
 	@Column(name = "ID")
 	@GeneratedValue(strategy = GenerationType.AUTO, generator = "native")
 	@GenericGenerator(name = "native", strategy = "native")
 	private Long id;
-
-	@Column(name = "NAME", nullable = false)
-	private String name;
-
+	
 	@ManyToOne
-	@JoinColumn(name = "FK_MILESTONE_ID")
+	@JoinColumn(name = "FK_EMPLOYEE_ID")
 	@JsonBackReference
-	private MilestoneEntity milestone;
-
-	@Column(name = "ESTIMATE", nullable = false)
-	private int estimate;
-
-	@Column(name = "PRIORITY", nullable = false)
-	private int priority;
-
-	@Column(name = "DEPENDENCY")
-	private Long dependentTaskId;
-
+	private EmployeeEntity employee;
+	
 	@Column(name = "START_DATE")
 	@Temporal(TemporalType.DATE)
 	private Date startDate;
-
+	
 	@Column(name = "END_DATE")
 	@Temporal(TemporalType.DATE)
 	private Date endDate;
+	
+	@Column(name = "DAY_COUNT")
+	private Integer dayCount;
 
 }

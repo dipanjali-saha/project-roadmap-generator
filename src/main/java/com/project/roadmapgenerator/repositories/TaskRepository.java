@@ -10,4 +10,5 @@ import com.project.roadmapgenerator.entities.TaskEntity;
 @Repository
 public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
 	Optional<TaskEntity> findById(Long taskId);
+	Optional<TaskEntity> findByPriorityAndMilestoneId(int priority, Long milestoneId);
 }

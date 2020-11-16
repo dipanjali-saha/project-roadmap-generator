@@ -38,7 +38,7 @@ public class ProjectDetailsMapperService {
 		return project;
 	}
 
-	public MilestoneDto convertMilestoneEntityToDto(MilestoneEntity milestoneEntity) {
+	private MilestoneDto convertMilestoneEntityToDto(MilestoneEntity milestoneEntity) {
 		MilestoneDto milestonePayload = MilestoneDto.builder().name(milestoneEntity.getName())
 				.startDate(DateUtil.toDefaultString(milestoneEntity.getStartDate()))
 				.endDate(DateUtil.toDefaultString(milestoneEntity.getEndDate())).build();
@@ -49,7 +49,7 @@ public class ProjectDetailsMapperService {
 		return milestonePayload;
 	}
 
-	public TaskDto convertTaskEntityToDto(TaskEntity taskEntity) {
+	private TaskDto convertTaskEntityToDto(TaskEntity taskEntity) {
 		TaskDto task = TaskDto.builder().name(taskEntity.getName()).priority(taskEntity.getPriority())
 				.estimate(taskEntity.getEstimate()).startDate(DateUtil.toDefaultString(taskEntity.getStartDate()))
 				.endDate(DateUtil.toDefaultString(taskEntity.getEndDate())).build();
@@ -58,6 +58,33 @@ public class ProjectDetailsMapperService {
 			task.setAssignedTo(taskAssignment.getEmployee().getName());
 		}
 		return task;
+	}
+	
+	public ProjectEntity dtoToEntity(ProjectDto projectPayload) {
+		ProjectEntity projectEntity = null;
+		if(null != projectPayload) {
+			projectEntity = ProjectEntity.builder().name(projectPayload.getName()).startDate(DateUtil.toDefaultDate(projectPayload.getStartDate()))
+					.endDate(DateUtil.toDefaultDate(projectPayload.getEndDate())).build();
+		}
+		return projectEntity;
+	}
+	
+	public MilestoneEntity convertMileStoneDtoToEntity(MilestoneDto milestonePayload) {
+		MilestoneEntity milestoneEntity = null;
+		if(null != milestonePayload) {
+			milestoneEntity = MilestoneEntity.builder().name(milestonePayload.getName()).startDate(DateUtil.toDefaultDate(milestonePayload.getStartDate()))
+					.endDate(DateUtil.toDefaultDate(milestonePayload.getEndDate())).priority(milestonePayload.getPriority())
+					.tasks(milestonePayload.getTasks().stream().map(this::convertTaskDtoToEntity).collect(Collectors.toList())).build();
+		}
+		return milestoneEntity;
+	}
+	
+	public TaskEntity convertTaskDtoToEntity(TaskDto taskPayload) {
+		TaskEntity taskEntity = null;
+		if(null != taskPayload) {
+			taskEntity = TaskEntity.builder().name(taskPayload.getName()).estimate(taskPayload.getEstimate()).priority(taskPayload.getPriority()).build();
+		}
+		return taskEntity;
 	}
 
 }

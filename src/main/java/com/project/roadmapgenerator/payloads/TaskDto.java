@@ -12,8 +12,9 @@ import lombok.NoArgsConstructor;
 public class TaskDto {
 	
 	private String name;
-	private int priority;
-	private int estimate;
+	private Integer priority;
+	private Integer estimate;
+	private Integer dependentTask;
 	private String assignedTo;
 	private String startDate;
 	private String endDate;
