@@ -39,10 +39,10 @@ public class EmployeeEntity {
 	@Column(name= "PROJECT_ID")
 	private Long projectId;
 	
-	@OneToMany(mappedBy = "employee", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
+	@OneToMany(mappedBy = "employee", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
 	private List<TaskAssignmentEntity> taskAssignments;
 	
-	@OneToMany(mappedBy = "employee", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
+	@OneToMany(mappedBy = "employee", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
 	private List<EmployeeLeaveEntity> employeeLeaves;
 
 }

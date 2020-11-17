@@ -3,6 +3,7 @@ package com.project.roadmapgenerator.services;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -70,13 +71,16 @@ public class RoadmapCalculatorService {
 					.findByTaskIdIn(tasks.stream().map(TaskEntity::getId).collect(Collectors.toList())));
 			tasks.sort(Comparator.comparingInt(TaskEntity::getPriority));
 			for (TaskEntity task : tasks) {
-				Date earliestPossibleDateToBeginTask = getEarliesPossibleDateToAssignTask(milestone.getStartDate(), task);
-				Map<Date, EmployeeEntity> earliestPossibleTaskAssignment = getEarliestPossibleTaskAssignment(earliestPossibleDateToBeginTask, projectId);
+				Date earliestPossibleDateToBeginTask = getEarliesPossibleDateToAssignTask(milestone.getStartDate(),
+						task);
+				Map<Date, EmployeeEntity> earliestPossibleTaskAssignment = getBestPossibleTaskAssignment(
+						earliestPossibleDateToBeginTask, projectId, task.getEstimate());
 				if (!earliestPossibleTaskAssignment.isEmpty()) {
-					task.setStartDate(earliestPossibleTaskAssignment.keySet().stream().findFirst().get());
+					task.setStartDate(earliestPossibleTaskAssignment.keySet().stream().findFirst().orElse(null));
 					task.setEndDate(DateUtil.addDaysWithoutWeekends(task.getStartDate(), task.getEstimate() - 1));
 					taskRepository.saveAndFlush(task);
-					assignTaskToEmployee(task, earliestPossibleTaskAssignment.values().stream().findFirst().get());
+					assignTaskToEmployee(task,
+							earliestPossibleTaskAssignment.values().stream().findFirst().orElse(null));
 					milestoneEndDate = task.getEndDate();
 				}
 			}
@@ -85,7 +89,8 @@ public class RoadmapCalculatorService {
 	}
 
 	private void assignTaskToEmployee(TaskEntity task, EmployeeEntity employee) {
-		TaskAssignmentEntity taskAssignment = TaskAssignmentEntity.builder().task(task).employee(employee).startDate(task.getStartDate()).endDate(task.getEndDate()).build();
+		TaskAssignmentEntity taskAssignment = TaskAssignmentEntity.builder().task(task).employee(employee)
+				.startDate(task.getStartDate()).endDate(task.getEndDate()).build();
 		taskAssignmentRepository.saveAndFlush(taskAssignment);
 	}
 
@@ -99,22 +104,52 @@ public class RoadmapCalculatorService {
 		return mileStoneStartDate;
 	}
 
-	private Map<Date, EmployeeEntity> getEarliestPossibleTaskAssignment(Date startDate, Long projectId) {
+	private Map<Date, EmployeeEntity> getBestPossibleTaskAssignment(Date date, Long projectId, int taskEstimate) {
+		Map<Date, EmployeeEntity> bestPossibleTaskAssignment = new HashMap<>();
+		Date taskStartDate = date;
 		List<EmployeeEntity> allProjectEmployees = employeeRepository.findByProjectId(projectId);
-		Date taskStartDate = startDate;
-		while (getEmployeeForTaskAssignment(taskStartDate, allProjectEmployees).isEmpty()) {
-			taskStartDate = DateUtil.addDaysWithoutWeekends(taskStartDate, 1);
-		}
-		return getEmployeeForTaskAssignment(taskStartDate, allProjectEmployees);
-	}
-
-	private Map<Date, EmployeeEntity> getEmployeeForTaskAssignment(Date date, List<EmployeeEntity> allEmployees) {
-		for (EmployeeEntity emp : allEmployees) {
-			if (CollectionUtils.isEmpty(taskAssignmentRepository.findByEmployeeIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(emp.getId(), date, date))) {
-				return Collections.singletonMap(date, emp);
+		while (bestPossibleTaskAssignment.isEmpty()) {
+			Date evaluationDate = taskStartDate;
+			List<EmployeeEntity> availableEmployees = allProjectEmployees.stream()
+					.filter(emp -> isEmployeeNotOnLeave(emp, evaluationDate)
+							&& isEmpNotAssignedToDifferentTask(evaluationDate, emp))
+					.collect(Collectors.toList());
+			if (CollectionUtils.isNotEmpty(availableEmployees)) {
+				Map<EmployeeEntity, Date> employeeTaskCompletionMap = new HashMap<>();
+				for (EmployeeEntity emp : availableEmployees) {
+					employeeTaskCompletionMap.put(emp, calculateTaskEndForEmployee(emp, taskEstimate, evaluationDate));
+				}
+				bestPossibleTaskAssignment.put(evaluationDate,
+						Collections.min(employeeTaskCompletionMap.entrySet(), Map.Entry.comparingByValue()).getKey());
+			} else {
+				taskStartDate = DateUtil.addDaysWithoutWeekends(taskStartDate, 1);
 			}
 		}
-		return Collections.emptyMap();
+		return bestPossibleTaskAssignment;
 	}
 
+	private boolean isEmployeeNotOnLeave(EmployeeEntity emp, Date dayInProgress) {
+		return CollectionUtils
+				.isEmpty(
+						emp.getEmployeeLeaves().stream()
+								.filter(leave -> leave.getStartDate().compareTo(dayInProgress) <= 0
+										&& leave.getEndDate().compareTo(dayInProgress) >= 0)
+								.collect(Collectors.toList()));
+	}
+
+	private boolean isEmpNotAssignedToDifferentTask(Date evaluationDate, EmployeeEntity emp) {
+		return CollectionUtils
+				.isEmpty(taskAssignmentRepository.findByEmployeeIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+						emp.getId(), evaluationDate, evaluationDate));
+	}
+
+	private Date calculateTaskEndForEmployee(EmployeeEntity emp, int taskEstimate, Date startDate) {
+		Date dayInProgress = startDate;
+		int daysConsumed = 0;
+		while (isEmployeeNotOnLeave(emp, dayInProgress) && daysConsumed <= taskEstimate) {
+			daysConsumed += 1;
+			dayInProgress = DateUtil.addDaysWithoutWeekends(dayInProgress, 1);
+		}
+		return DateUtil.addDaysWithoutWeekends(dayInProgress, -1);
+	}
 }

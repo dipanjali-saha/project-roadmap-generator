@@ -17,6 +17,9 @@ import org.hibernate.annotations.GenericGenerator;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
+import lombok.Data;
+
+@Data
 @Entity
 @Table(name = "EMPLOYEE_LEAVE_TBL")
 public class EmployeeLeaveEntity {
