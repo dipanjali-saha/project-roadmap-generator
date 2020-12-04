@@ -10,7 +10,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class TaskDto {
-	
+
+	private Long taskId;
 	private String name;
 	private Integer priority;
 	private Integer estimate;

@@ -42,8 +42,5 @@ public class EmployeeLeaveEntity {
 	@Column(name = "END_DATE")
 	@Temporal(TemporalType.DATE)
 	private Date endDate;
-	
-	@Column(name = "DAY_COUNT")
-	private Integer dayCount;
 
 }

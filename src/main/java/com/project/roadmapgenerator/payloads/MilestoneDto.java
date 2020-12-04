@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class MilestoneDto {
 	
+	private Long milestoneId;
 	private String name;
 	private Integer priority;
 	private String startDate;

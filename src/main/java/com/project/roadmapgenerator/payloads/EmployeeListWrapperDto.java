@@ -11,12 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProjectDto {
-	
-	private Long projectId;
-	private String name;
-	private String startDate;
-	private String endDate;
-	private List<MilestoneDto> milestones;
+public class EmployeeListWrapperDto {
+	private List<EmployeeDto> employeeList;
 
 }

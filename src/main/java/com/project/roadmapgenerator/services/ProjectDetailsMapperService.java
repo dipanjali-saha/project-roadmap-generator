@@ -27,7 +27,7 @@ public class ProjectDetailsMapperService {
 	public ProjectDto entityToDto(ProjectEntity projectEntity) {
 		ProjectDto project = null;
 		if (null != projectEntity) {
-			project = ProjectDto.builder().name(projectEntity.getName())
+			project = ProjectDto.builder().projectId(projectEntity.getId()).name(projectEntity.getName())
 					.startDate(DateUtil.toDefaultString(projectEntity.getStartDate()))
 					.endDate(DateUtil.toDefaultString(projectEntity.getEndDate())).build();
 			List<MilestoneDto> milestones = CollectionUtils.isNotEmpty(projectEntity.getMilestones()) ? projectEntity
@@ -39,7 +39,7 @@ public class ProjectDetailsMapperService {
 	}
 
 	private MilestoneDto convertMilestoneEntityToDto(MilestoneEntity milestoneEntity) {
-		MilestoneDto milestonePayload = MilestoneDto.builder().name(milestoneEntity.getName())
+		MilestoneDto milestonePayload = MilestoneDto.builder().milestoneId(milestoneEntity.getId()).name(milestoneEntity.getName())
 				.startDate(DateUtil.toDefaultString(milestoneEntity.getStartDate()))
 				.endDate(DateUtil.toDefaultString(milestoneEntity.getEndDate())).build();
 		List<TaskDto> tasks = CollectionUtils.isNotEmpty(milestoneEntity.getTasks())
@@ -50,7 +50,7 @@ public class ProjectDetailsMapperService {
 	}
 
 	private TaskDto convertTaskEntityToDto(TaskEntity taskEntity) {
-		TaskDto task = TaskDto.builder().name(taskEntity.getName()).priority(taskEntity.getPriority())
+		TaskDto task = TaskDto.builder().taskId(taskEntity.getId()).name(taskEntity.getName()).priority(taskEntity.getPriority())
 				.estimate(taskEntity.getEstimate()).startDate(DateUtil.toDefaultString(taskEntity.getStartDate()))
 				.endDate(DateUtil.toDefaultString(taskEntity.getEndDate())).build();
 		TaskAssignmentEntity taskAssignment = taskAssignmentRepository.findByTaskId(taskEntity.getId()).orElse(null);

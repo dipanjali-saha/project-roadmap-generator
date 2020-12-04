@@ -2,6 +2,8 @@ server:
   port: {{server.port}}
 
 spring:
+   profiles:
+      active: {{spring.profiles.active}}
    datasource:
      driverClassName: {{spring.datasource.driverClassName}}
      url: {{spring.datasource.url}}
@@ -11,6 +13,9 @@ spring:
       database-platform: {{spring.jpa.database-platform}}
       show-sql: {{spring.jpa.show-sql}}
       hibernate.ddl-auto: {{spring.jpa.update}}
+   servlet:
+      multipart:
+         enabled: {{spring.servlet.multipart.enabled}}
 
 logging:
   level:
