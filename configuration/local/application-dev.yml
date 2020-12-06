@@ -8,7 +8,7 @@ spring:
      driverClassName: com.mysql.jdbc.Driver
      url: jdbc:mysql://localhost:3306/roadmapgenerator
      username: root
-     password: JoyTua@02122018
+     password: ******
    jpa:
       database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
       show-sql: true
