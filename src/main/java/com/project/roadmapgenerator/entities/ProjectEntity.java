@@ -55,4 +55,7 @@ public class ProjectEntity implements Serializable {
 	@OneToMany(mappedBy = "project", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
 	@JsonManagedReference
 	private List<MilestoneEntity> milestones;
+	
+	@Column(name="IS_ROADMAP_GENERATED")
+	private boolean roadmapGenerated;
 }

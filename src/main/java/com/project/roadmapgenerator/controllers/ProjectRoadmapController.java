@@ -4,11 +4,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.project.roadmapgenerator.payloads.ProjectDetailsWrapperDto;
 import com.project.roadmapgenerator.payloads.ProjectDto;
 import com.project.roadmapgenerator.services.ProjectRoadmapDetailsService;
+import com.project.roadmapgenerator.services.ProjectService;
 import com.project.roadmapgenerator.services.RoadmapCalculatorService;
 
 @RestController
@@ -19,10 +22,13 @@ public class ProjectRoadmapController {
 	private RoadmapCalculatorService roadmapCalculatorService;
 	@Autowired
 	private ProjectRoadmapDetailsService projectRoadmapDetailsService;
+	@Autowired
+	private ProjectService projectService;
 	
-	@PostMapping("/project/{projectName}")
-	public void generateProjectRoadmap(@PathVariable("projectName") String projectName) {
-		roadmapCalculatorService.calculateProjectRoadmap(projectName);
+	@PostMapping
+	public ProjectDetailsWrapperDto generateProjectRoadmap(@RequestBody Long projectId) {
+		roadmapCalculatorService.calculateProjectRoadmap(projectId);
+		return projectService.fetchAllProjects();
 	}
 	
 	@GetMapping("/project/{projectName}")

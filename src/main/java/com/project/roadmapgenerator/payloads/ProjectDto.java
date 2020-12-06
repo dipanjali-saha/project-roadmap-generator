@@ -18,5 +18,7 @@ public class ProjectDto {
 	private String startDate;
 	private String endDate;
 	private List<MilestoneDto> milestones;
+	private boolean roadmapGenerated;
+	private boolean employeeAssigned;
 
 }

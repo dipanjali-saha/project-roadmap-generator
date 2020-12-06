@@ -40,11 +40,14 @@ public class RoadmapCalculatorService {
 	private TaskAssignmentRepository taskAssignmentRepository;
 
 	@Transactional
-	public void calculateProjectRoadmap(String projectName) {
-		List<ProjectEntity> projects = projectRepository.findByName(projectName);
-		ProjectEntity project = projects.stream().findFirst().orElse(null);
+	public void calculateProjectRoadmap(Long projectId) {
+		ProjectEntity project = projectRepository.findById(projectId).orElse(null);
 		Date projectEndDate = null;
 		if (null != project) {
+			List<TaskEntity> projectTasks = project.getMilestones().stream()
+					.flatMap(milestone -> milestone.getTasks().stream()).collect(Collectors.toList());
+			taskAssignmentRepository.deleteAll(taskAssignmentRepository
+					.findByTaskIdIn(projectTasks.stream().map(TaskEntity::getId).collect(Collectors.toList())));
 			projectEndDate = project.getStartDate();
 			List<MilestoneEntity> milestones = project.getMilestones();
 			if (CollectionUtils.isNotEmpty(milestones)) {
@@ -56,6 +59,7 @@ public class RoadmapCalculatorService {
 				}
 			}
 			project.setEndDate(projectEndDate);
+			project.setRoadmapGenerated(true);
 			projectRepository.saveAndFlush(project);
 		}
 	}
@@ -66,8 +70,6 @@ public class RoadmapCalculatorService {
 		milestone.setEndDate(null);
 		List<TaskEntity> tasks = milestone.getTasks();
 		if (CollectionUtils.isNotEmpty(tasks)) {
-			taskAssignmentRepository.deleteAll(taskAssignmentRepository
-					.findByTaskIdIn(tasks.stream().map(TaskEntity::getId).collect(Collectors.toList())));
 			tasks.sort(Comparator.comparingInt(TaskEntity::getPriority));
 			for (TaskEntity task : tasks) {
 				Date earliestPossibleDateToBeginTask = getEarliestPossibleDateToAssignTask(projectStartDate, task);
@@ -75,12 +77,14 @@ public class RoadmapCalculatorService {
 						earliestPossibleDateToBeginTask, projectId, task.getEstimate());
 				if (!earliestPossibleTaskAssignment.isEmpty()) {
 					if (null == milestone.getStartDate()) {
-						milestone.setStartDate(earliestPossibleTaskAssignment.keySet().stream().findFirst().orElse(null));
+						milestone.setStartDate(
+								earliestPossibleTaskAssignment.keySet().stream().findFirst().orElse(null));
 					}
 					task.setStartDate(earliestPossibleTaskAssignment.keySet().stream().findFirst().orElse(null));
 					task.setEndDate(DateUtil.addDaysWithoutWeekends(task.getStartDate(), task.getEstimate() - 1));
 					taskRepository.saveAndFlush(task);
-					assignTaskToEmployee(task, earliestPossibleTaskAssignment.values().stream().findFirst().orElse(null));
+					assignTaskToEmployee(task,
+							earliestPossibleTaskAssignment.values().stream().findFirst().orElse(null));
 					milestoneEndDate = task.getEndDate();
 				}
 			}
@@ -139,9 +143,8 @@ public class RoadmapCalculatorService {
 	}
 
 	private boolean isEmpNotAssignedToDifferentTask(Date evaluationDate, EmployeeEntity emp) {
-		return CollectionUtils
-				.isEmpty(taskAssignmentRepository.findByEmployeeIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-						emp.getId(), evaluationDate, evaluationDate));
+		return CollectionUtils.isEmpty(
+				taskAssignmentRepository.findByEmployeeIdAndEndDateGreaterThanEqual(emp.getId(), evaluationDate));
 	}
 
 	private Date calculateTaskEndForEmployee(EmployeeEntity emp, int taskEstimate, Date startDate) {

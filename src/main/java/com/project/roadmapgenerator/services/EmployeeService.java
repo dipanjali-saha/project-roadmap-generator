@@ -18,11 +18,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.project.roadmapgenerator.entities.EmployeeEntity;
 import com.project.roadmapgenerator.entities.EmployeeLeaveEntity;
+import com.project.roadmapgenerator.entities.ProjectEntity;
+import com.project.roadmapgenerator.entities.TaskEntity;
 import com.project.roadmapgenerator.payloads.EmployeeDto;
 import com.project.roadmapgenerator.payloads.EmployeeListWrapperDto;
 import com.project.roadmapgenerator.repositories.EmployeeLeaveRepository;
 import com.project.roadmapgenerator.repositories.EmployeeRepository;
 import com.project.roadmapgenerator.repositories.ProjectRepository;
+import com.project.roadmapgenerator.repositories.TaskAssignmentRepository;
 
 @Service
 public class EmployeeService {
@@ -36,12 +39,15 @@ public class EmployeeService {
 	private ProjectRepository projectRepository;
 	@Autowired
 	private EmployeeLeaveRepository employeeLeaveRepository;
+	@Autowired
+	private TaskAssignmentRepository taskAssignmentRepository;
 
 	public EmployeeListWrapperDto fetchAllEmployees() {
-		List<EmployeeDto> employees = employeeRepository
-				.findAll().stream().map(employee -> EmployeeDto.builder().employeeId(employee.getId())
-						.name(employee.getName()).assignedProjectId(employee.getProjectId())
-						.assignedProjectName(projectRepository.findById(employee.getProjectId()).get().getName()).build())
+		List<EmployeeDto> employees = employeeRepository.findAll().stream()
+				.map(employee -> EmployeeDto.builder().employeeId(employee.getId()).name(employee.getName())
+						.assignedProjectId(employee.getProjectId())
+						.assignedProjectName(projectRepository.findById(employee.getProjectId()).get().getName())
+						.build())
 				.collect(Collectors.toList());
 		return EmployeeListWrapperDto.builder().employeeList(employees).build();
 	}
@@ -97,6 +103,12 @@ public class EmployeeService {
 
 				}
 				employeeLeaveRepository.saveAll(employeeLeaves);
+				ProjectEntity assignedProject = projectRepository.findById(employee.getProjectId()).orElse(null);
+				if (null != assignedProject) {
+					assignedProject.setRoadmapGenerated(false);
+					projectRepository.save(assignedProject);
+				}
+				
 			}
 		}
 	}
@@ -116,11 +128,28 @@ public class EmployeeService {
 		EmployeeEntity employeeEntity;
 		employeeEntity = employeeRepository.findById(employeeDto.getEmployeeId()).orElse(null);
 		if (null != employeeEntity) {
+			Long existingProjectId = employeeEntity.getProjectId();
 			employeeEntity.setName(employeeDto.getName());
 			if (projectRepository.findById(employeeDto.getAssignedProjectId()).isPresent()) {
 				employeeEntity.setProjectId(employeeDto.getAssignedProjectId());
 			}
 			employeeRepository.save(employeeEntity);
+			List<ProjectEntity> roadmapsToBeGeneratedFor = new ArrayList<>();
+			ProjectEntity previousProject = projectRepository.findById(existingProjectId).orElse(null);
+			if (null != previousProject) {
+				previousProject.setRoadmapGenerated(false);
+				roadmapsToBeGeneratedFor.add(previousProject);
+				List<TaskEntity> projectTasks = previousProject.getMilestones().stream()
+						.flatMap(milestone -> milestone.getTasks().stream()).collect(Collectors.toList());
+				taskAssignmentRepository.deleteAll(taskAssignmentRepository
+						.findByEmployeeIdAndTaskIdIn(employeeEntity.getId(), projectTasks.stream().map(TaskEntity::getId).collect(Collectors.toList())));
+			}
+			ProjectEntity assignedProject = projectRepository.findById(employeeDto.getAssignedProjectId()).orElse(null);
+			if (null != assignedProject) {
+				assignedProject.setRoadmapGenerated(false);
+				roadmapsToBeGeneratedFor.add(assignedProject);
+			}
+			projectRepository.saveAll(roadmapsToBeGeneratedFor);
 		}
 	}
 

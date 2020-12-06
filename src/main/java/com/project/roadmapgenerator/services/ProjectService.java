@@ -129,6 +129,7 @@ public class ProjectService {
 		Iterator<Row> projectOverviewRows = projectOverviewSheet.iterator();
 		int rowNumber = 0;
 		ProjectDto projectObj = new ProjectDto();
+		projectObj.setRoadmapGenerated(false);
 		while (projectOverviewRows.hasNext()) {
 			if (rowNumber == 0) {
 				rowNumber++;

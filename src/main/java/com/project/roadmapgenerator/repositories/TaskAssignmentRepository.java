@@ -14,6 +14,7 @@ public interface TaskAssignmentRepository extends JpaRepository<TaskAssignmentEn
 	
 	Optional<TaskAssignmentEntity> findByTaskId(Long taskId);
 	List<TaskAssignmentEntity> findByTaskIdIn(List<Long> taskIds);
-	List<TaskAssignmentEntity> findByEmployeeIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(Long employeeId, Date startDateComparedTo, Date endDateComparedTo);
+	List<TaskAssignmentEntity> findByEmployeeIdAndTaskIdIn(Long employeeId, List<Long> taskIds);
+	List<TaskAssignmentEntity> findByEmployeeIdAndEndDateGreaterThanEqual(Long employeeId, Date endDateComparedTo);
 
 }
