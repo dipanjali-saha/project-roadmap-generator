@@ -81,7 +81,10 @@ public class RoadmapCalculatorService {
 								earliestPossibleTaskAssignment.keySet().stream().findFirst().orElse(null));
 					}
 					task.setStartDate(earliestPossibleTaskAssignment.keySet().stream().findFirst().orElse(null));
-					task.setEndDate(DateUtil.addDaysWithoutWeekends(task.getStartDate(), task.getEstimate() - 1));
+					task.setEndDate(calculateTaskEndForEmployee(
+							earliestPossibleTaskAssignment.values().stream().findFirst().orElse(null),
+							task.getEstimate(),
+							earliestPossibleTaskAssignment.keySet().stream().findFirst().orElse(null)));
 					taskRepository.saveAndFlush(task);
 					assignTaskToEmployee(task,
 							earliestPossibleTaskAssignment.values().stream().findFirst().orElse(null));
@@ -120,6 +123,7 @@ public class RoadmapCalculatorService {
 							&& isEmpNotAssignedToDifferentTask(evaluationDate, emp))
 					.collect(Collectors.toList());
 			if (CollectionUtils.isNotEmpty(availableEmployees)) {
+				availableEmployees.sort(Comparator.comparingLong(EmployeeEntity::getId));
 				Map<EmployeeEntity, Date> employeeTaskCompletionMap = new HashMap<>();
 				for (EmployeeEntity emp : availableEmployees) {
 					employeeTaskCompletionMap.put(emp, calculateTaskEndForEmployee(emp, taskEstimate, evaluationDate));
@@ -148,14 +152,17 @@ public class RoadmapCalculatorService {
 	}
 
 	private Date calculateTaskEndForEmployee(EmployeeEntity emp, int taskEstimate, Date startDate) {
-		Date dayInProgress = startDate;
-		int daysConsumed = 0;
-		while (isEmployeeNotOnLeave(emp, dayInProgress) && daysConsumed <= taskEstimate) {
-			if (isEmpNotAssignedToDifferentTask(dayInProgress, emp)) {
-				daysConsumed += 1;
+		if (null != emp && null != startDate) {
+			Date dayInProgress = startDate;
+			int daysConsumed = 0;
+			while (daysConsumed < taskEstimate) {
+				if (isEmployeeNotOnLeave(emp, dayInProgress) && isEmpNotAssignedToDifferentTask(dayInProgress, emp)) {
+					daysConsumed += 1;
+				}
+				dayInProgress = DateUtil.addDaysWithoutWeekends(dayInProgress, 1);
 			}
-			dayInProgress = DateUtil.addDaysWithoutWeekends(dayInProgress, 1);
+			return DateUtil.subtractDaysWithoutWeekends(dayInProgress, 1);
 		}
-		return DateUtil.addDaysWithoutWeekends(dayInProgress, -1);
+		return null;
 	}
 }
